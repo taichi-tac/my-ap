@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>動物占い | Webアプリ</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0f1a33;
+      --card:#0f1830cc;
+      --line:#ffffff1f;
+      --text:#eaf0ff;
+      --muted:#b9c6ffcc;
+      --accent:#7aa7ff;
+      --good:#7dffb0;
+      --warn:#ffd36a;
+      --bad:#ff7a8e;
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 900px at 10% 10%, #2b5cff2a, transparent 60%),
+        radial-gradient(900px 700px at 90% 20%, #ff63c72a, transparent 55%),
+        radial-gradient(900px 700px at 40% 100%, #49ffd02a, transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .app{
+      width:min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
+    }
+
+    @media (max-width: 860px){
+      .app{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .header{
+      padding:20px 22px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .title{
+      margin:0;
+      font-size:22px;
+      letter-spacing:.02em;
+    }
+    .subtitle{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .chip{
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      color:var(--muted);
+      font-size:12px;
+      user-select:none;
+      white-space:nowrap;
+      background: #0000001a;
+    }
+
+    .content{
+      padding:18px 22px 22px;
+    }
+
+    .grid{
+      display:grid;
+      gap:12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:0 0 6px;
+    }
+    input, select{
+      width:100%;
+      padding:12px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#07102580;
+      color:var(--text);
+      outline:none;
+    }
+    input::placeholder{ color:#b9c6ff80; }
+    input:focus, select:focus{
+      border-color:#7aa7ff66;
+      box-shadow: 0 0 0 4px #7aa7ff22;
+    }
+
+    .actions{
+      margin-top:14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      cursor:pointer;
+      padding:12px 14px;
+      border-radius:16px;
+      font-weight:700;
+      letter-spacing:.02em;
+      color:var(--text);
+      background: linear-gradient(135deg, #3a7cff, #9a52ff);
+      box-shadow: 0 10px 22px rgba(0,0,0,.35);
+      transition: transform .12s ease, filter .12s ease;
+      user-select:none;
+    }
+    button:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    button:active{ transform: translateY(0px); filter: brightness(.98); }
+
+    .ghost{
+      background: #00000020;
+      border:1px solid var(--line);
+      box-shadow:none;
+      font-weight:600;
+    }
+
+    .resultBox{
+      padding:18px 20px 20px;
+      border-top:1px solid var(--line);
+      background: linear-gradient(180deg, #00000000, #00000020);
+      min-height: 240px;
+      display:grid;
+      gap:12px;
+      align-content:start;
+    }
+
+    .hero{
+      display:flex;
+      gap:14px;
+      align-items:center;
+    }
+
+    .emoji{
+      width:62px;
+      height:62px;
+      display:grid;
+      place-items:center;
+      font-size:34px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background: #0000001a;
+      position:relative;
+      overflow:hidden;
+    }
+    .emoji::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(circle at 30% 30%, #ffffff30, transparent 55%);
+      transform: rotate(12deg);
+    }
+
+    .animalName{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+    }
+    .animalMeta{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.4;
+    }
+
+    .bars{
+      display:grid;
+      gap:10px;
+      margin-top:6px;
+    }
+
+    .barRow{
+      display:grid;
+      grid-template-columns: 90px 1fr 36px;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background:#ffffff12;
+      border:1px solid var(--line);
+      overflow:hidden;
+    }
+    .bar > i{
+      display:block;
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, #7aa7ff, #7dffb0);
+      border-radius:999px;
+      transition: width .7s cubic-bezier(.2,.9,.2,1);
+    }
+    .score{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      color:var(--text);
+      opacity:.9;
+    }
+
+    .msg{
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#00000014;
+      line-height:1.7;
+      font-size:14px;
+    }
+
+    .pillRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      font-size:12px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#00000012;
+      color:var(--muted);
+    }
+
+    .side{
+      display:grid;
+      gap:18px;
+    }
+    .side .content{ padding:18px 18px 20px; }
+
+    .smallTitle{
+      margin:0 0 10px;
+      font-size:14px;
+      color:var(--text);
+      opacity:.95;
+    }
+
+    .list{
+      display:grid;
+      gap:10px;
+    }
+
+    .hint{
+      border:1px dashed #ffffff2a;
+      border-radius:18px;
+      padding:12px 12px;
+      color:var(--muted);
+      background:#00000012;
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .historyItem{
+      border:1px solid var(--line);
+      background:#00000012;
+      border-radius:16px;
+      padding:12px 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+    }
+
+    .historyLeft{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      min-width:0;
+    }
+    .historyEmoji{
+      width:34px;height:34px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      display:grid;
+      place-items:center;
+      background:#00000014;
+      flex:0 0 auto;
+    }
+    .historyText{
+      min-width:0;
+    }
+    .historyText b{
+      display:block;
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .historyText span{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      margin-top:2px;
+    }
+
+    .tinyBtn{
+      padding:9px 10px;
+      border-radius:14px;
+      background:#00000020;
+      border:1px solid var(--line);
+      box-shadow:none;
+      font-weight:700;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .fadeIn{
+      animation: fadeIn .35s ease both;
+    }
+    @keyframes fadeIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <!-- メイン -->
+    <section class="card">
+      <div class="header">
+        <div>
+          <h1 class="title">動物占い</h1>
+          <p class="subtitle">誕生日や気分を入力して、今日のあなたを“動物タイプ”で占います。</p>
+        </div>
+        <div class="chip" id="seedChip">Seed: -</div>
+      </div>
+
+      <div class="content">
+        <div class="grid">
+          <div>
+            <label for="nameInput">ニックネーム（任意）</label>
+            <input id="nameInput" placeholder="例）トミー / あゆみ / you" maxlength="24" />
+          </div>
+          <div>
+            <label for="birthInput">誕生日（任意）</label>
+            <input id="birthInput" type="date" />
+          </div>
+          <div>
+            <label for="moodSelect">今の気分</label>
+            <select id="moodSelect">
+              <option value="normal">ふつう</option>
+              <option value="up">アゲ</option>
+              <option value="down">おつかれ</option>
+              <option value="focus">集中したい</option>
+              <option value="love">恋愛モード</option>
+              <option value="money">仕事/お金</option>
+            </select>
+          </div>
+          <div>
+            <label for="styleSelect">占いのテイスト</label>
+            <select id="styleSelect">
+              <option value="soft">やさしめ</option>
+              <option value="sharp">ズバッと</option>
+              <option value="funny">ちょいネタ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="drawBtn">占う</button>
+          <button class="ghost" id="randomBtn" type="button">ランダムで占う</button>
+          <button class="ghost" id="resetBtn" type="button">履歴クリア</button>
+        </div>
+      </div>
+
+      <div class="resultBox" id="resultBox">
+        <div class="msg" id="welcomeMsg">
+          「占う」を押すと結果が表示されます。誕生日を入れると毎回同じ結果になりやすくなります。
+        </div>
+      </div>
+    </section>
+
+    <!-- サイド -->
+    <aside class="side">
+      <section class="card">
+        <div class="header">
+          <div>
+            <h2 class="title" style="font-size:16px;margin:0;">最近の結果</h2>
+            <p class="subtitle" style="margin-top:4px;">直近5件を保存（端末内）</p>
+          </div>
+          <div class="chip">localStorage</div>
+        </div>
+        <div class="content">
+          <div class="list" id="historyList"></div>
+          <div class="hint" style="margin-top:12px;">
+            カスタムしたい場合：<br>
+            JS内の <b>animals</b> 配列に動物タイプや文章を追加してください。
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="header">
+          <div>
+            <h2 class="title" style="font-size:16px;margin:0;">使い方</h2>
+            <p class="subtitle" style="margin-top:4px;">超シンプル設計</p>
+          </div>
+          <div class="chip">HTML/CSS/JS</div>
+        </div>
+        <div class="content">
+          <div class="pillRow">
+            <span class="pill">1ファイル</span>
+            <span class="pill">外部依存なし</span>
+            <span class="pill">履歴保存</span>
+            <span class="pill">誕生日で固定</span>
+          </div>
+          <div class="hint" style="margin-top:12px;">
+            誕生日あり：同じ入力で同じ結果が出やすい（再現性）<br>
+            誕生日なし：毎回ランダム性が高い（遊び）<br>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script>
+    // =========================
+    //  動物タイプ定義
+    // =========================
+    const animals = [
+      {
+        key: "lion",
+        name: "ライオン",
+        emoji: "🦁",
+        tags: ["王道", "決断力", "リーダー"],
+        base: { love: 62, work: 78, health: 58 },
+        soft: {
+          title: "堂々と進む日",
+          text: "迷いが減って、決めたことに追い風が吹きやすい日。小さくても“決断”を1つ入れると一気に流れが整います。"
+        },
+        sharp: {
+          title: "決めろ。動け。",
+          text: "優柔不断はコスト。今日は判断を先に済ませて、実行に時間を回すほど勝ちます。"
+        },
+        funny: {
+          title: "王様モード",
+          text: "やる気は満タン。あとは“先延ばし大臣”を更迭するだけです。"
+        }
+      },
+      {
+        key: "cat",
+        name: "ネコ",
+        emoji: "🐈",
+        tags: ["直感", "自由", "こだわり"],
+        base: { love: 74, work: 55, health: 66 },
+        soft: {
+          title: "直感が当たりやすい日",
+          text: "今日は“好き/嫌い”のセンサーが冴えます。心地いい方を選ぶほど運が乗りやすいです。"
+        },
+        sharp: {
+          title: "合わないものは切れ",
+          text: "気が散る要因を1つ捨てるだけで集中が戻ります。遠慮は不要。"
+        },
+        funny: {
+          title: "気まぐれは才能",
+          text: "予定変更？OK。むしろあなたの直感が上司です。"
+        }
+      },
+      {
+        key: "dog",
+        name: "イヌ",
+        emoji: "🐶",
+        tags: ["誠実", "協力", "継続"],
+        base: { love: 68, work: 63, health: 72 },
+        soft: {
+          title: "味方が増える日",
+          text: "丁寧な一言が信頼を積み上げます。相談・共有を増やすほど好転しやすいです。"
+        },
+        sharp: {
+          title: "“良い人”で終わるな",
+          text: "協力は武器。今日は『何を達成するか』を言語化して動けば成果が出ます。"
+        },
+        funny: {
+          title: "忠誠心、発動",
+          text: "褒められたら伸びる日。自分も自分を褒めてから走りましょう。"
+        }
+      },
+      {
+        key: "fox",
+        name: "キツネ",
+        emoji: "🦊",
+        tags: ["分析", "戦略", "スマート"],
+        base: { love: 56, work: 76, health: 60 },
+        soft: {
+          title: "頭がクリアな日",
+          text: "情報を整理して優先順位を決めると、時間が増えたように感じます。まずは“捨てる”から。"
+        },
+        sharp: {
+          title: "やらないことを決めろ",
+          text: "忙しさは能力じゃない。やめる項目を先に切れば勝ち筋が見えます。"
+        },
+        funny: {
+          title: "策士、ニヤリ",
+          text: "周りがバタつくほどあなたは冷静。メガネをクイッ（してない）"
+        }
+      },
+      {
+        key: "penguin",
+        name: "ペンギン",
+        emoji: "🐧",
+        tags: ["堅実", "段取り", "安定"],
+        base: { love: 60, work: 66, health: 74 },
+        soft: {
+          title: "整えると運が上がる日",
+          text: "環境を整えるほど集中が戻ります。机の上、通知、タブ…“一つだけ片付ける”でOK。"
+        },
+        sharp: {
+          title: "段取りが9割",
+          text: "始める前に5分の準備。そこを省くと30分失います。"
+        },
+        funny: {
+          title: "行進、開始",
+          text: "あなたが整えると全員が楽になる。今日のあなたは“隊長ペンギン”です。"
+        }
+      },
+      {
+        key: "owl",
+        name: "フクロウ",
+        emoji: "🦉",
+        tags: ["洞察", "学習", "静けさ"],
+        base: { love: 58, work: 70, health: 64 },
+        soft: {
+          title: "深く考えるほど良い日",
+          text: "浅いノイズより、深い問いが価値になります。読む・書く・整理するが吉。"
+        },
+        sharp: {
+          title: "理解は武器",
+          text: "今日の勝ち筋は“解像度”。曖昧な部分を一つ潰せば一気に前進します。"
+        },
+        funny: {
+          title: "夜の賢者",
+          text: "静かな場所に行くと能力が1.3倍。フクロウ補正です。"
+        }
+      }
+    ];
+
+    // =========================
+    //  乱数（再現性）: xmur3 + mulberry32
+    // =========================
+    function xmur3(str){
+      let h = 1779033703 ^ str.length;
+      for(let i=0;i<str.length;i++){
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return function(){
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        return (h ^= (h >>> 16)) >>> 0;
+      }
+    }
+    function mulberry32(a){
+      return function(){
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      }
+    }
+
+    // =========================
+    //  スコア生成（気分で補正）
+    // =========================
+    function applyMood(base, mood){
+      const b = { ...base };
+      const clamp = (n)=> Math.max(0, Math.min(100, n));
+
+      const delta = {
+        normal: { love: 0,  work: 0,  health: 0 },
+        up:     { love: +6, work: +6, health: +2 },
+        down:   { love: -2, work: -6, health: -6 },
+        focus:  { love: -2, work: +10, health: -2 },
+        love:   { love: +12, work: -4, health: 0 },
+        money:  { love: -4, work: +12, health: -2 },
+      }[mood] || { love:0, work:0, health:0 };
+
+      b.love = clamp(b.love + delta.love);
+      b.work = clamp(b.work + delta.work);
+      b.health = clamp(b.health + delta.health);
+      return b;
+    }
+
+    // =========================
+    //  文言選択
+    // =========================
+    function pickStyleText(animal, style){
+      if(style === "sharp") return animal.sharp;
+      if(style === "funny") return animal.funny;
+      return animal.soft;
+    }
+
+    // =========================
+    //  履歴
+    // =========================
+    const HISTORY_KEY = "animal_fortune_history_v1";
+    function loadHistory(){
+      try{
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+      }catch(e){
+        return [];
+      }
+    }
+    function saveHistory(list){
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0,5)));
+    }
+
+    // =========================
+    //  UI参照
+    // =========================
+    const el = (id)=>document.getElementById(id);
+    const nameInput = el("nameInput");
+    const birthInput = el("birthInput");
+    const moodSelect = el("moodSelect");
+    const styleSelect = el("styleSelect");
+    const seedChip = el("seedChip");
+    const resultBox = el("resultBox");
+    const historyList = el("historyList");
+
+    el("drawBtn").addEventListener("click", ()=> runFortune(false));
+    el("randomBtn").addEventListener("click", ()=> runFortune(true));
+    el("resetBtn").addEventListener("click", ()=>{
+      localStorage.removeItem(HISTORY_KEY);
+      renderHistory();
+      resultBox.innerHTML = '<div class="msg fadeIn">履歴をクリアしました。もう一度「占う」をどうぞ。</div>';
+    });
+
+    // Enterで占う
+    [nameInput, birthInput].forEach(x=>{
+      x.addEventListener("keydown", (e)=>{
+        if(e.key === "Enter") runFortune(false);
+      });
+    });
+
+    // =========================
+    //  メイン処理
+    // =========================
+    function runFortune(forceRandom){
+      const name = (nameInput.value || "").trim();
+      const birth = birthInput.value; // "YYYY-MM-DD" or ""
+      const mood = moodSelect.value;
+      const style = styleSelect.value;
+
+      // seed（誕生日があれば再現性、なければ日時でランダム性）
+      const today = new Date();
+      const ymd = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+      const fallback = `${ymd}-${today.getHours()}-${today.getMinutes()}-${today.getSeconds()}-${Math.random()}`;
+
+      const seedStr = forceRandom
+        ? `RANDOM-${fallback}`
+        : `NAME:${name}|BIRTH:${birth || "none"}|MOOD:${mood}|STYLE:${style}|DATE:${ymd}`;
+
+      const seedFn = xmur3(seedStr);
+      const rng = mulberry32(seedFn());
+
+      seedChip.textContent = "Seed: " + seedStr.slice(0, 26) + (seedStr.length>26 ? "…" : "");
+
+      // 動物決定
+      const idx = Math.floor(rng() * animals.length);
+      const animal = animals[idx];
+
+      // スコア（軽い揺らぎ）
+      const base = applyMood(animal.base, mood);
+      const jitter = () => Math.floor((rng() * 9) - 4); // -4..+4
+      const scores = {
+        love: Math.max(0, Math.min(100, base.love + jitter())),
+        work: Math.max(0, Math.min(100, base.work + jitter())),
+        health: Math.max(0, Math.min(100, base.health + jitter())),
+      };
+
+      // 文言
+      const copy = pickStyleText(animal, style);
+
+      // おすすめ行動（簡易）
+      const tip = buildTip(animal.key, mood);
+
+      // 描画
+      renderResult({ name, birth, mood, style, seedStr, animal, scores, copy, tip });
+
+      // 履歴保存
+      const hist = loadHistory();
+      const when = new Date().toLocaleString("ja-JP", { hour12:false });
+      hist.unshift({
+        when,
+        who: name || "あなた",
+        animalKey: animal.key,
+        animalName: animal.name,
+        emoji: animal.emoji,
+        title: copy.title
+      });
+      saveHistory(hist);
+      renderHistory();
+    }
+
+    function buildTip(animalKey, mood){
+      const tips = {
+        lion: {
+          normal: "5分で“今日の決断”を1つ決める",
+          up: "勢いのまま“1つだけ前倒し”する",
+          down: "小さい決断だけ済ませて、休む",
+          focus: "締切を短く区切ってスタートする",
+          love: "主導権は優しさで握る",
+          money: "交渉や価格見直しにツキ"
+        },
+        cat: {
+          normal: "気持ちいい方を1つ選ぶ",
+          up: "直感で“先に面白い方”へ",
+          down: "情報遮断して回復優先",
+          focus: "好きなBGM/環境を整える",
+          love: "駆け引きより“素直”が勝つ",
+          money: "不要なサブスク整理が吉"
+        },
+        dog: {
+          normal: "誰かに一言、感謝を伝える",
+          up: "チーム連携で成果を取りに行く",
+          down: "頼る/相談するを1回入れる",
+          focus: "タスクを共有して締切を作る",
+          love: "相手のペースに合わせすぎない",
+          money: "信頼がリターンに繋がる日"
+        },
+        fox: {
+          normal: "やらないことを1つ決める",
+          up: "優先順位TOP1に集中投下",
+          down: "TODOを3つに絞って終わり",
+          focus: "5分だけ設計してから着手",
+          love: "言語化すると誤解が減る",
+          money: "数字で判断すると勝ちやすい"
+        },
+        penguin: {
+          normal: "机上/通知/タブのどれか1つ整理",
+          up: "段取りを固めて速度を上げる",
+          down: "環境整備→短時間作業でOK",
+          focus: "15分単位で区切ると強い",
+          love: "安心感が最大の魅力になる",
+          money: "家計・原価・固定費の見直し"
+        },
+        owl: {
+          normal: "学ぶ/書く/振り返るが吉",
+          up: "深掘りテーマを1つ決める",
+          down: "静かな時間を確保して回復",
+          focus: "曖昧な点を“1つだけ”潰す",
+          love: "理解しようとする姿勢が刺さる",
+          money: "知識投資・学習が回収に繋がる"
+        }
+      };
+      return (tips[animalKey] && tips[animalKey][mood]) || "深呼吸して、次の一手を小さく始める";
+    }
+
+    function moodLabel(v){
+      return {
+        normal:"ふつう",
+        up:"アゲ",
+        down:"おつかれ",
+        focus:"集中したい",
+        love:"恋愛モード",
+        money:"仕事/お金"
+      }[v] || v;
+    }
+    function styleLabel(v){
+      return { soft:"やさしめ", sharp:"ズバッと", funny:"ちょいネタ" }[v] || v;
+    }
+
+    function renderResult({ name, birth, mood, style, animal, scores, copy, tip }){
+      const who = name || "あなた";
+      const birthText = birth ? `誕生日: ${birth}` : "誕生日: 未入力";
+      const meta = `${who} / ${birthText} / 気分: ${moodLabel(mood)} / テイスト: ${styleLabel(style)}`;
+
+      resultBox.innerHTML = `
+        <div class="hero fadeIn">
+          <div class="emoji" aria-hidden="true">${animal.emoji}</div>
+          <div>
+            <h3 class="animalName">${animal.name}タイプ：${copy.title}</h3>
+            <p class="animalMeta">${escapeHtml(meta)}</p>
+          </div>
+        </div>
+
+        <div class="pillRow fadeIn">
+          ${animal.tags.map(t=>`<span class="pill">${escapeHtml(t)}</span>`).join("")}
+        </div>
+
+        <div class="bars fadeIn">
+          ${barRow("恋愛運", scores.love)}
+          ${barRow("仕事運", scores.work)}
+          ${barRow("健康運", scores.health)}
+        </div>
+
+        <div class="msg fadeIn">
+          ${escapeHtml(copy.text)}
+        </div>
+
+        <div class="msg fadeIn" style="border-color:#7aa7ff3a;">
+          <b>今日のおすすめ行動：</b><br>${escapeHtml(tip)}
+        </div>
+      `;
+
+      // バーをアニメさせる
+      requestAnimationFrame(()=>{
+        resultBox.querySelectorAll(".bar > i").forEach((i)=>{
+          const w = i.getAttribute("data-w");
+          i.style.width = w + "%";
+        });
+      });
+    }
+
+    function barRow(label, val){
+      const v = Math.round(val);
+      return `
+        <div class="barRow">
+          <div>${label}</div>
+          <div class="bar"><i data-w="${v}"></i></div>
+          <div class="score">${v}</div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderHistory(){
+      const hist = loadHistory();
+      if(hist.length === 0){
+        historyList.innerHTML = `<div class="hint">まだ履歴がありません。</div>`;
+        return;
+      }
+
+      historyList.innerHTML = hist.map((h, idx)=>`
+        <div class="historyItem fadeIn">
+          <div class="historyLeft">
+            <div class="historyEmoji">${h.emoji}</div>
+            <div class="historyText">
+              <b>${escapeHtml(h.who)}：${escapeHtml(h.animalName)}</b>
+              <span>${escapeHtml(h.title)} ・ ${escapeHtml(h.when)}</span>
+            </div>
+          </div>
+          <button class="tinyBtn" data-idx="${idx}" type="button">表示</button>
+        </div>
+      `).join("");
+
+      historyList.querySelectorAll("button[data-idx]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const idx = Number(btn.getAttribute("data-idx"));
+          const item = loadHistory()[idx];
+          if(!item) return;
+
+          const animal = animals.find(a=>a.key === item.animalKey);
+          if(!animal) return;
+
+          // 履歴はスコアや気分等を保存してないので、簡易表示（タイトルのみ）
+          resultBox.innerHTML = `
+            <div class="hero fadeIn">
+              <div class="emoji" aria-hidden="true">${animal.emoji}</div>
+              <div>
+                <h3 class="animalName">${animal.name}タイプ：${escapeHtml(item.title)}</h3>
+                <p class="animalMeta">${escapeHtml(item.when)} / ${escapeHtml(item.who)}</p>
+              </div>
+            </div>
+            <div class="msg fadeIn">
+              履歴表示は簡易版です。完全に同じ結果を再現したい場合は、同じ入力で「占う」を押してください。
+            </div>
+          `;
+        });
+      });
+    }
+
+    // 初期表示
+    renderHistory();
+  </script>
+</body>
+</html>
